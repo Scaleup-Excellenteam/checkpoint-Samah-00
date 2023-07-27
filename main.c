@@ -344,22 +344,48 @@ void decryptFile(FILE* inputFile, FILE* outputFile, int shift) {
     }
 }
 
-/*
 int main() {
     // ... main function code ...
 
-    // Open the file for reading
-    FILE* file = fopen("students_with_class.txt", "r");
+
+    // Decrypt the data from the encrypted file
+    FILE* encryptedFile = fopen("encrypted_students.bin", "rb");
+    if (encryptedFile == NULL) {
+        printf("Error opening the encrypted file.\n");
+        return 1;
+    }
+
+
+    FILE* decryptedFile = fopen("decrypted_students.txt", "w");
+    if (decryptedFile == NULL) {
+        printf("Error creating the decrypted file.\n");
+        fclose(encryptedFile);
+        return 1;
+    }
+
+
+    int shift = 3; // You should use the correct shift value used during encryption
+    decryptFile(encryptedFile, decryptedFile, shift);
+
+
+    fclose(encryptedFile);
+    fclose(decryptedFile);
+
+
+    // Open the decrypted file for reading
+    FILE* file = fopen("decrypted_students.txt", "r");
     if (file == NULL) {
         printf("Error opening the file.\n");
         return 1;
     }
+
 
     // Creating courses
     struct Course* courses[MAX_COURSES];
     for (int i = 0; i < MAX_COURSES; i++) {
         courses[i] = createCourse(courseNames[i]);
     }
+
 
     // Create the level structures
     struct Level levels[MAX_LEVELS];
@@ -372,12 +398,11 @@ int main() {
         readStudentsFromFile(file, levels);
     }
 
+
     // Close the file after reading
     fclose(file);
 
 
-
-    /*
     // Main menu loop
     int choice;
     do {
@@ -442,10 +467,11 @@ int main() {
         }
     }
 
+
     return 0;
 }
-*/
 
+/*
 int main() {
     // ... main function code ...
 
@@ -505,7 +531,7 @@ int main() {
 
     return 0;
 }
-
+*/
 
 
 
