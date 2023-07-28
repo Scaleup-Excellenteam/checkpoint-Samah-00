@@ -34,9 +34,6 @@ int decryptData() {
     return 0;
 }
 
-
-
-
 // Function to read the students' data from the file and create the student structures
 void readStudentsFromFile(FILE* file, struct Level* levels) {
     char firstName[MAX_NAME_LEN];
@@ -46,16 +43,10 @@ void readStudentsFromFile(FILE* file, struct Level* levels) {
     int classNumber;
     int grades[MAX_COURSES];
 
-
-
-
     while (fscanf(file, "%s %s %d %d %d", firstName, lastName, &phoneNumber, &levelNumber, &classNumber) == 5) {
         for (int k = 0; k < MAX_COURSES; k++) {
             fscanf(file, "%d", &grades[k]);
         }
-
-
-
 
         // Find the corresponding level and class for the current student
         if (levelNumber >= 1 && levelNumber <= MAX_LEVELS &&
@@ -71,9 +62,6 @@ void readStudentsFromFile(FILE* file, struct Level* levels) {
     }
 }
 
-
-
-
 // Function to build the structures and read students' data from the file
 int buildDatabase(struct Level* levels) {
     // Open the decrypted file for reading
@@ -83,13 +71,11 @@ int buildDatabase(struct Level* levels) {
         return 1;
     }
 
-
     // Creating courses
     struct Course* courses[MAX_COURSES];
     for (int i = 0; i < MAX_COURSES; i++) {
         courses[i] = createCourse(courseNames[i]);
     }
-
 
     // Create the level structures
     for (int i = 0; i < MAX_LEVELS; i++) {
@@ -101,12 +87,10 @@ int buildDatabase(struct Level* levels) {
         readStudentsFromFile(file, &levels[i]);
     }
 
-
     // Close the file after reading
     fclose(file);
     // Delete the decrypted file
     remove("decrypted_students.txt");
-
 
     return 0;
 }

@@ -124,13 +124,23 @@ int main() {
         case 5:
             displayAllStudents(levels);
             break;
+        
         case 6:
+            findCandidatesForDeparture(levels);
+            break;
+        case 7:
+            calculateAveragePerCoursePerLayer(levels);
+            break;
+        case 8:
+            exportDatabaseToFile(levels);
+            break;
+        case 9:
             printf("Exiting the program.\n");
             break;
         default:
             printf("Invalid choice. Please try again.\n");
         }
-    } while (choice != 6);
+    } while (choice != 9);
 
 
     // Free memory for all students

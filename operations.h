@@ -15,6 +15,10 @@ void displayAllStudents(struct Level* levels);
 void printMenu();
 void freeMemory(struct Level* levels);
 struct Student* searchStudentByName(struct Level* levels, const char* firstName, const char* lastName);
-
+void findCandidatesForDeparture(struct Level* levels);
+void printStudentInfo(struct Student* student);
+void calculateAveragePerCoursePerLayer(struct Level* levels);
+void exportDatabaseToFile(struct Level* levels);
+void printStudentToFile(FILE* file, struct Student* student);
 
 #endif
