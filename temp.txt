@@ -1,0 +1,689 @@
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+
+
+#define MAX_LEVELS 12
+#define MAX_CLASSES 10
+#define MAX_COURSES 20
+#define MAX_NAME_LEN 100
+#define MAX_GRADE 100
+#define MIN_GRADE 0
+#define DEFAULT_GRADE 0
+#define MAX_STUDENTS_PER_CLASS 100000
+
+
+const char* courseNames[] = {
+   "Course 1",
+   "Course 2",
+   "Course 3",
+   "Course 4",
+   "Course 5",
+   "Course 6",
+   "Course 7",
+   "Course 8",
+   "Course 9",
+   "Course 10",
+   "Course 11",
+   "Course 12",
+   "Course 13",
+   "Course 14",
+   "Course 15",
+   "Course 16",
+   "Course 17",
+   "Course 18",
+   "Course 19",
+   "Course 20"
+};
+
+
+// structures and functions
+// Structure for Course
+struct Course {
+    char courseName[MAX_NAME_LEN];
+    int grade; // Variable to store the grade for this course
+};
+
+
+// Structure for Student
+struct Student {
+    char firstName[MAX_NAME_LEN];
+    char lastName[MAX_NAME_LEN];
+    int phoneNumber;
+    int level;
+    int class;
+    struct Course courses[MAX_COURSES]; // Array of size 20 for courses
+    struct Student* nextStudent; // Linked list pointer
+};
+
+
+struct Student* createStudent(const char* firstName, const char* lastName, int phoneNumber, int level, int class, const int* grades) {
+    struct Student* newStudent = (struct Student*)malloc(sizeof(struct Student));
+    strncpy(newStudent->firstName, firstName, sizeof(newStudent->firstName) - 1);
+    newStudent->firstName[sizeof(newStudent->firstName) - 1] = '\0'; // Ensure null-terminated
+    strncpy(newStudent->lastName, lastName, sizeof(newStudent->lastName) - 1);
+    newStudent->lastName[sizeof(newStudent->lastName) - 1] = '\0'; // Ensure null-terminated
+
+
+    newStudent->level = level;
+    newStudent->class = class;
+    newStudent->phoneNumber = phoneNumber;
+
+
+    for (int i = 0; i < MAX_COURSES; i++) {
+        strncpy(newStudent->courses[i].courseName, courseNames[i], sizeof(newStudent->courses[i].courseName) - 1);
+        newStudent->courses[i].courseName[sizeof(newStudent->courses[i].courseName) - 1] = '\0'; // Ensure null-terminated
+        // Initialize grades to 0
+        newStudent->courses[i].grade = DEFAULT_GRADE;
+        // Fill in actual grades if they exist
+        if (grades[i] >= MIN_GRADE && grades[i] <= MAX_GRADE) {
+            newStudent->courses[i].grade = grades[i];
+        }
+    }
+
+
+    return newStudent;
+}
+
+
+// Structure for Class
+struct Class {
+    // Add class-specific data here
+    // char className[50];
+    struct Student* studentsHead;
+};
+
+
+// Structure for Level
+struct Level {
+    int levelNumber;
+    struct Class classes[MAX_CLASSES]; // Array of size 10 for classes in this level
+};
+
+
+struct Course* createCourse(const char* name) {
+    struct Course* newCourse = (struct Course*)malloc(sizeof(struct Course));
+    // Copy the name into the courseName field
+    strncpy(newCourse->courseName, name, sizeof(newCourse->courseName) - 1);
+    newCourse->courseName[sizeof(newCourse->courseName) - 1] = '\0'; // Ensure null-terminated
+    return newCourse;
+}
+
+// Function to build the structures and read students' data from the file
+int buildDatabase(struct Level* levels) {
+    // Open the decrypted file for reading
+    FILE* file = fopen("decrypted_students.txt", "r");
+    if (file == NULL) {
+        printf("Error opening the file.\n");
+        return 1;
+    }
+
+    // Creating courses
+    struct Course* courses[MAX_COURSES];
+    for (int i = 0; i < MAX_COURSES; i++) {
+        courses[i] = createCourse(courseNames[i]);
+    }
+
+    // Create the level structures
+    for (int i = 0; i < MAX_LEVELS; i++) {
+        // Initialize the studentsHead to NULL for all classes in this level
+        for (int j = 0; j < MAX_CLASSES; j++) {
+            levels[i].classes[j].studentsHead = NULL;
+        }
+        // Read students' data from the file and create the student structures for this level
+        readStudentsFromFile(file, &levels[i]);
+    }
+
+    // Close the file after reading
+    fclose(file);
+    // Delete the decrypted file
+    remove("decrypted_students.txt");
+
+    return 0;
+}
+
+// Function to read the students' data from the file and create the student structures
+void readStudentsFromFile(FILE* file, struct Level* levels) {
+    char firstName[MAX_NAME_LEN];
+    char lastName[MAX_NAME_LEN];
+    int phoneNumber;
+    int levelNumber;
+    int classNumber;
+    int grades[MAX_COURSES];
+
+
+    while (fscanf(file, "%s %s %d %d %d", firstName, lastName, &phoneNumber, &levelNumber, &classNumber) == 5) {
+        for (int k = 0; k < MAX_COURSES; k++) {
+            fscanf(file, "%d", &grades[k]);
+        }
+
+
+        // Find the corresponding level and class for the current student
+        if (levelNumber >= 1 && levelNumber <= MAX_LEVELS &&
+            classNumber >= 1 && classNumber <= MAX_CLASSES) {
+            struct Student* newStudent = createStudent(firstName, lastName, phoneNumber, levelNumber, classNumber, grades);
+            // Add the new student to the linked list of students in the corresponding class of the level
+            newStudent->nextStudent = levels[levelNumber - 1].classes[classNumber - 1].studentsHead;
+            levels[levelNumber - 1].classes[classNumber - 1].studentsHead = newStudent;
+        }
+        else {
+            printf("Invalid level or class number for the student: %s %s\n", firstName, lastName);
+        }
+    }
+}
+
+// Function to add a new student to the level and class
+void addNewStudent(struct Level* levels, int levelNumber, int classNumber) {
+    char firstName[MAX_NAME_LEN];
+    char lastName[MAX_NAME_LEN];
+    int phoneNumber;
+    int grades[MAX_COURSES];
+
+    printf("Enter first name: ");
+    scanf("%s", firstName);
+    printf("Enter last name: ");
+    scanf("%s", lastName);
+    printf("Enter phone number: ");
+    scanf("%d", &phoneNumber);
+
+    for (int i = 0; i < MAX_COURSES; i++) {
+        printf("Enter grade for %s: ", courseNames[i]);
+        scanf("%d", &grades[i]);
+    }
+
+    // Find the corresponding level and class for the new student
+    if (levelNumber >= 1 && levelNumber <= MAX_LEVELS &&
+        classNumber >= 1 && classNumber <= MAX_CLASSES) {
+        struct Student* newStudent = createStudent(firstName, lastName, phoneNumber, levelNumber, classNumber, grades);
+        // Add the new student to the linked list of students in the corresponding class of the level
+        newStudent->nextStudent = levels[levelNumber - 1].classes[classNumber - 1].studentsHead;
+        levels[levelNumber - 1].classes[classNumber - 1].studentsHead = newStudent;
+        printf("New student added successfully.\n");
+    }
+    else {
+        printf("Invalid level or class number. Failed to add the student.\n");
+    }
+}
+
+// Function to search for a student by first and last name
+// Returns a pointer to the found student, or NULL if not found
+struct Student* searchStudentByName(struct Level* levels, const char* firstName, const char* lastName) {
+    for (int i = 0; i < MAX_LEVELS; i++) {
+        for (int j = 0; j < MAX_CLASSES; j++) {
+            struct Student* currentStudent = levels[i].classes[j].studentsHead;
+            while (currentStudent) {
+                if (strcmp(currentStudent->firstName, firstName) == 0 && strcmp(currentStudent->lastName, lastName) == 0) {
+                    // Student found, return the pointer to the student
+                    return currentStudent;
+                }
+                currentStudent = currentStudent->nextStudent;
+            }
+        }
+    }
+    // Student not found
+    return NULL;
+}
+
+// Function to delete a student by first and last name
+void deleteStudent(struct Level* levels) {
+    char firstName[MAX_NAME_LEN];
+    char lastName[MAX_NAME_LEN];
+
+
+    printf("Enter first name of the student to delete: ");
+    scanf("%s", firstName);
+    printf("Enter last name of the student to delete: ");
+    scanf("%s", lastName);
+
+
+    // Search for the student
+    struct Student* studentToDelete = searchStudentByName(levels, firstName, lastName);
+    if (studentToDelete) {
+        // Student found, proceed with deletion
+        for (int i = 0; i < MAX_LEVELS; i++) {
+            for (int j = 0; j < MAX_CLASSES; j++) {
+                struct Student* currentStudent = levels[i].classes[j].studentsHead;
+                struct Student* prevStudent = NULL;
+                while (currentStudent) {
+                    if (currentStudent == studentToDelete) {
+                        // Student found, delete them
+                        if (prevStudent) {
+                            prevStudent->nextStudent = currentStudent->nextStudent;
+                        }
+                        else {
+                            levels[i].classes[j].studentsHead = currentStudent->nextStudent;
+                        }
+                        free(currentStudent);
+                        printf("Student deleted successfully.\n");
+                        return;
+                    }
+                    prevStudent = currentStudent;
+                    currentStudent = currentStudent->nextStudent;
+                }
+            }
+        }
+    }
+    else {
+        printf("Student not found. Deletion failed.\n");
+    }
+}
+
+// Function to edit a grade of a given student
+void editStudent(struct Level* levels) {
+    char firstName[MAX_NAME_LEN];
+    char lastName[MAX_NAME_LEN];
+    int newGrade;
+    int courseNumber;
+
+
+    printf("Enter first name of the student to edit: ");
+    scanf("%s", firstName);
+    printf("Enter last name of the student to edit: ");
+    scanf("%s", lastName);
+    printf("Enter course number to update grade (1 to 20): ");
+    scanf("%d", &courseNumber);
+
+
+    if (courseNumber < 1 || courseNumber > MAX_COURSES) {
+        printf("Invalid course number.\n");
+        return;
+    }
+
+
+    printf("Enter new grade for %s: ", courseNames[courseNumber - 1]);
+    scanf("%d", &newGrade);
+
+
+    if (newGrade >= MIN_GRADE && newGrade <= MAX_GRADE) {
+        // Search for the student
+        struct Student* studentToEdit = searchStudentByName(levels, firstName, lastName);
+        if (studentToEdit) {
+            // Student found, proceed with grade update
+            studentToEdit->courses[courseNumber - 1].grade = newGrade;
+            printf("Grade updated successfully.\n");
+        }
+        else {
+            printf("Student not found. Grade update failed.\n");
+        }
+    }
+    else {
+        printf("Invalid grade. Grade update failed.\n");
+    }
+}
+
+// Function to search for a student by first and last name and display all information about him
+void searchStudent(struct Level* levels) {
+    char firstName[MAX_NAME_LEN];
+    char lastName[MAX_NAME_LEN];
+
+
+    printf("Enter first name of the student to search: ");
+    scanf("%s", firstName);
+    printf("Enter last name of the student to search: ");
+    scanf("%s", lastName);
+
+
+    struct Student* student = searchStudentByName(levels, firstName, lastName);
+    if (student) {
+        // Student found, display information
+        printf("Name: %s %s\n", student->firstName, student->lastName);
+        printf("Phone Number: %d\n", student->phoneNumber);
+        printf("Level: %d\n", student->level);
+        printf("Class: %d\n", student->class);
+        for (int k = 0; k < MAX_COURSES; k++) {
+            printf("%s Grade: %d\n", student->courses[k].courseName, student->courses[k].grade);
+        }
+    }
+    else {
+        printf("Student not found.\n");
+    }
+}
+
+// Function to display all students
+void displayAllStudents(struct Level* levels) {
+    for (int i = 0; i < MAX_LEVELS; i++) {
+        for (int j = 0; j < MAX_CLASSES; j++) {
+            struct Student* currentStudent = levels[i].classes[j].studentsHead;
+            while (currentStudent) {
+                printf("Name: %s %s\n", currentStudent->firstName, currentStudent->lastName);
+                printf("Phone Number: %d\n", currentStudent->phoneNumber);
+                printf("Level: %d\n", currentStudent->level);
+                printf("Class: %d\n", currentStudent->class);
+                for (int k = 0; k < MAX_COURSES; k++) {
+                    printf("%s Grade: %d\n",
+                        currentStudent->courses[k].courseName,
+                        currentStudent->courses[k].grade);
+                }
+                printf("\n");
+                currentStudent = currentStudent->nextStudent;
+            }
+        }
+    }
+}
+
+// Helper function to get the total grade of a student
+int getTotalGrade(const struct Student* student) {
+    int totalGrade = 0;
+    for (int i = 0; i < MAX_COURSES; i++) {
+        totalGrade += student->courses[i].grade;
+    }
+    return totalGrade;
+}
+
+// Helper function to compare two students based on their grades
+int compareStudentsByGrade(const void* a, const void* b) {
+    const struct Student* studentA = *(const struct Student**)a;
+    const struct Student* studentB = *(const struct Student**)b;
+    return getTotalGrade(studentB) - getTotalGrade(studentA);
+}
+
+// Function to display the top ten students in a particular subject
+void displayTopTenStudents(struct Level* levels) {
+    int levelNumber, classNumber, courseNumber; 
+    printf("Enter level number (1 to 12): "); 
+    scanf("%d", &levelNumber); 
+    printf("Enter class number (1 to 10): "); 
+    scanf("%d", &classNumber); 
+    printf("Enter course number (1 to 20): "); 
+    scanf("%d", &courseNumber); 
+
+    if (levelNumber < 1 || levelNumber > MAX_LEVELS || 
+    classNumber < 1 || classNumber > MAX_CLASSES || 
+    courseNumber < 1 || courseNumber > MAX_COURSES) { 
+        printf("Invalid input. Please try again.\n"); 
+        return; 
+        }
+
+    struct Class* currentClass = &levels[levelNumber - 1].classes[classNumber - 1];
+    int numStudents = 0;
+    struct Student* studentArr[MAX_STUDENTS_PER_CLASS];
+
+    // Collect all students from the class
+    struct Student* currentStudent = currentClass->studentsHead;
+    while (currentStudent && numStudents < MAX_STUDENTS_PER_CLASS) {
+        studentArr[numStudents] = currentStudent;
+        currentStudent = currentStudent->nextStudent;
+        numStudents++;
+    }
+
+    // Sort the students based on their grades in the specified course
+    sortStudentsByCourseGrade(studentArr, numStudents, courseNumber);
+
+    // Display the top ten students
+    printf("Top ten students in Course %d for Level %d, Class %d:\n", courseNumber, levelNumber, classNumber);
+    for (int i = 0; i < numStudents && i < 10; i++) {
+        printf("Name: %s %s, Grade: %d\n", studentArr[i]->firstName, studentArr[i]->lastName, studentArr[i]->courses[courseNumber - 1].grade);
+    }
+}
+
+// Function to display candidates for departure based on a specified total grade threshold
+void displayCandidatesForDeparture(struct Level* levels) {
+    int levelNumber, classNumber, threshold;
+
+    printf("Enter level number (1 to 12): ");
+    scanf("%d", &levelNumber);
+    printf("Enter class number (1 to 10): ");
+    scanf("%d", &classNumber);
+    printf("Enter the total grade threshold: ");
+    scanf("%d", &threshold);
+
+    if (levelNumber < 1 || levelNumber > MAX_LEVELS ||
+        classNumber < 1 || classNumber > MAX_CLASSES) {
+        printf("Invalid input. Please try again.\n");
+        return;
+    }
+
+    struct Class* currentClass = &levels[levelNumber - 1].classes[classNumber - 1];
+
+    printf("Candidates for Departure in Level %d Class %d with Total Grade below %d:\n", levelNumber, classNumber, threshold);
+    struct Student* currentStudent = currentClass->studentsHead;
+    while (currentStudent) {
+        int totalGrade = getTotalGrade(currentStudent);
+        if (totalGrade < threshold) {
+            printf("Name: %s %s, Total Grade: %d\n", currentStudent->firstName, currentStudent->lastName, totalGrade);
+        }
+        currentStudent = currentStudent->nextStudent;
+    }
+}
+
+
+
+// Function to calculate the average grade per course per level
+void calculateAveragePerCourse(struct Level* levels) {
+    int levelNumber;
+
+    printf("Enter level number (1 to 12): ");
+    scanf("%d", &levelNumber);
+
+    if (levelNumber < 1 || levelNumber > MAX_LEVELS) {
+        printf("Invalid input. Please try again.\n");
+        return;
+    }
+
+    struct Level* currentLevel = &levels[levelNumber - 1];
+    double courseTotal[MAX_COURSES] = { 0 };
+    int studentCount = 0;
+
+    // Calculate the total grade for each course in the specified level
+    for (int i = 0; i < MAX_CLASSES; i++) {
+        struct Class* currentClass = &currentLevel->classes[i];
+        struct Student* currentStudent = currentClass->studentsHead;
+        while (currentStudent) {
+            for (int j = 0; j < MAX_COURSES; j++) {
+                courseTotal[j] += currentStudent->courses[j].grade;
+            }
+            studentCount++;
+            currentStudent = currentStudent->nextStudent;
+        }
+    }
+
+    // Calculate the average grade per course
+    printf("Average Grade Per Course in Level %d:\n", levelNumber);
+    for (int i = 0; i < MAX_COURSES; i++) {
+        double averageGrade = courseTotal[i] / studentCount;
+        printf("%s: %.2f\n", courseNames[i], averageGrade);
+    }
+}
+
+
+
+// Function to export the entire database to a file
+void exportDatabaseToFile(struct Level* levels) {
+    char filename[MAX_NAME_LEN];
+
+    printf("Enter the filename to export the database to: ");
+    scanf("%s", filename);
+
+    FILE* exportFile = fopen(filename, "w");
+    if (exportFile == NULL) {
+        printf("Error creating the export file.\n");
+        return;
+    }
+
+    // Write the data to the export file
+    for (int i = 0; i < MAX_LEVELS; i++) {
+        for (int j = 0; j < MAX_CLASSES; j++) {
+            struct Student* currentStudent = levels[i].classes[j].studentsHead;
+            while (currentStudent) {
+                fprintf(exportFile, "%s %s %d %d %d", currentStudent->firstName, currentStudent->lastName, 
+                        currentStudent->phoneNumber, currentStudent->level, currentStudent->class);
+                for (int k = 0; k < MAX_COURSES; k++) {
+                    fprintf(exportFile, " %d", currentStudent->courses[k].grade);
+                }
+                fprintf(exportFile, "\n");
+                currentStudent = currentStudent->nextStudent;
+            }
+        }
+    }
+
+    fclose(exportFile);
+    printf("Database exported successfully to %s.\n", filename);
+}
+
+
+// Function to print the main menu
+void printMenu() {
+    printf("\n==== Main Menu ====\n");
+    printf("1. Add a new student\n");
+    printf("2. Delete a student\n");
+    printf("3. Edit student information\n");
+    printf("4. Search for a student\n");
+    printf("5. Display all students\n");
+    printf("6. Top ten students in each grade in a particular subject\n");
+    printf("7. Students who are candidates for departure\n");
+    printf("8. Average calculation per course per layer\n");
+    printf("9. Export the entire database to a file\n");
+    printf("10. Exit\n");
+    printf("Enter your choice: ");
+}
+
+// Function to free memory for all students
+void freeMemory(struct Level* levels) {
+    for (int i = 0; i < MAX_LEVELS; i++) {
+        for (int j = 0; j < MAX_CLASSES; j++) {
+            struct Student* currentStudent = levels[i].classes[j].studentsHead;
+            while (currentStudent) {
+                struct Student* temp = currentStudent;
+                currentStudent = currentStudent->nextStudent;
+                free(temp);
+            }
+        }
+    }
+}
+
+// Encryption and decryption functions
+// Function to encrypt a character using a shift cipher
+char encryptChar(char ch, int shift) {
+    if (('A' <= ch && ch <= 'Z') || ('a' <= ch && ch <= 'z')) {
+        if ('A' <= ch && ch <= 'Z') {
+            ch = ((ch - 'A' + shift) % 26) + 'A';
+        }
+        else {
+            ch = ((ch - 'a' + shift) % 26) + 'a';
+        }
+    }
+    return ch;
+}
+
+// Function to encrypt the file using a shift cipher
+void encryptFile(FILE* inputFile, FILE* outputFile, int shift) {
+    char ch;
+    while ((ch = fgetc(inputFile)) != EOF) {
+        ch = encryptChar(ch, shift);
+        fputc(ch, outputFile);
+    }
+}
+
+// Function to decrypt a character using a shift cipher
+char decryptChar(char ch, int shift) {
+    if (('A' <= ch && ch <= 'Z') || ('a' <= ch && ch <= 'z')) {
+        if ('A' <= ch && ch <= 'Z') {
+            ch = ((ch - 'A' + (26 - shift)) % 26) + 'A';
+        }
+        else {
+            ch = ((ch - 'a' + (26 - shift)) % 26) + 'a';
+        }
+    }
+    return ch;
+}
+
+// Function to decrypt the file using a shift cipher
+void decryptFile(FILE* inputFile, FILE* outputFile, int shift) {
+    char ch;
+    while ((ch = fgetc(inputFile)) != EOF) {
+        ch = decryptChar(ch, shift);
+        fputc(ch, outputFile);
+    }
+}
+
+// Function to decrypt the data from the encrypted file
+int decryptData() {
+    FILE* encryptedFile = fopen("encrypted_students.bin", "rb");
+    if (encryptedFile == NULL) {
+        printf("Error opening the encrypted file.\n");
+        return 1;
+    }
+
+    FILE* decryptedFile = fopen("decrypted_students.txt", "w");
+    if (decryptedFile == NULL) {
+        printf("Error creating the decrypted file.\n");
+        fclose(encryptedFile);
+        return 1;
+    }
+
+    int shift = 3; // You should use the correct shift value used during encryption
+    decryptFile(encryptedFile, decryptedFile, shift);
+
+    fclose(encryptedFile);
+    fclose(decryptedFile);
+
+    return 0;
+}
+
+int main() {
+    // ... main function code ...
+
+     // Decrypt the data from the encrypted file
+    if (decryptData() != 0) {
+        return 1; // Error occurred during decryption
+    }
+
+    // Create the level structures and read students' data from the file
+    struct Level levels[MAX_LEVELS];
+    if (buildDatabase(levels) != 0) {
+        return 1; // Error occurred while building the database
+    }
+
+    // Main menu loop
+    int choice;
+    do {
+        printMenu();
+        scanf("%d", &choice);
+        switch (choice) {
+            case 1:
+            {
+                int levelNumber, classNumber;
+                printf("Enter level number (1 to 12): ");
+                scanf("%d", &levelNumber);
+                printf("Enter class number (1 to 10): ");
+                scanf("%d", &classNumber);
+                addNewStudent(levels, levelNumber, classNumber);
+                break;
+            }
+            case 2:
+                deleteStudent(levels);
+                break;
+            case 3:
+                editStudent(levels);
+                break;
+            case 4:
+                searchStudent(levels);
+                break;
+            case 5:
+                displayAllStudents(levels);
+                break;
+            case 6:
+                displayTopTenStudents(levels);
+                break;
+            case 7:
+                displayCandidatesForDeparture(levels);
+                break;
+            case 8:
+                calculateAveragePerCourse(levels);
+                break;
+            case 9:
+                exportDatabaseToFile(levels);
+                break;
+            case 10:
+                printf("Exiting the program.\n");
+                break;
+            default:
+                printf("Invalid choice. Please try again.\n");
+        }
+    } while (choice != 10);
+
+    // Free memory for all students
+    freeMemory(levels);
+
+    return 0;
+}
