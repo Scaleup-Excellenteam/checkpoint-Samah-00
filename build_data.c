@@ -14,7 +14,6 @@ int decryptData() {
         return 1;
     }
 
-
     FILE* decryptedFile = fopen("decrypted_students.txt", "w");
     if (decryptedFile == NULL) {
         printf("Error creating the decrypted file.\n");
@@ -22,14 +21,11 @@ int decryptData() {
         return 1;
     }
 
-
     int shift = 3; // You should use the correct shift value used during encryption
     decryptFile(encryptedFile, decryptedFile, shift);
 
-
     fclose(encryptedFile);
     fclose(decryptedFile);
-
 
     return 0;
 }
@@ -44,7 +40,7 @@ void readStudentsFromFile(FILE* file, struct Level* levels) {
     int grades[MAX_COURSES];
 
     while (fscanf(file, "%s %s %d %d %d", firstName, lastName, &phoneNumber, &levelNumber, &classNumber) == 5) {
-        for (int k = 0; k < MAX_COURSES; k++) {
+        for (int k = 0; k < MAX_COURSES/2; k++) {
             fscanf(file, "%d", &grades[k]);
         }
 

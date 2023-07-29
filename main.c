@@ -1,13 +1,12 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-
-
 #include "structures.h"
 #include "operations.h"
 #include "encrypt.h"
-
 #include "constants.h"
+
+// to compile: gcc main.c operations.c build_data.c encrypt.c -g -o main -lssl -lcrypto
 
 const char* courseNames[MAX_COURSES] = {
    "Course 1",
@@ -66,8 +65,6 @@ struct Student* createStudent(const char* firstName, const char* lastName, int p
 
     return newStudent;
 }
-
-
 
 
 struct Course* createCourse(const char* name) {
@@ -149,3 +146,49 @@ int main() {
 
     return 0;
 }
+
+/*
+int main() {
+    const char *input_file = "students_with_class.txt";
+    const char *encrypted_file = "encrypted.bin";
+    const char *decrypted_file = "decrypted.txt";
+    const char *key_file = "key.txt";
+    const char *iv_file = "iv.txt";
+
+    unsigned char key[EVP_MAX_KEY_LENGTH];
+    unsigned char iv[EVP_MAX_IV_LENGTH];
+
+    // Read the key from the key file
+    if (read_hex_from_file(key_file, key, EVP_MAX_KEY_LENGTH) != 0) {
+        fprintf(stderr, "Failed to read the key from file: %s\n", key_file);
+        return -1;
+    }
+
+    // Read the IV from the IV file
+    if (read_hex_from_file(iv_file, iv, EVP_MAX_IV_LENGTH) != 0) {
+        fprintf(stderr, "Failed to read the IV from file: %s\n", iv_file);
+        return -1;
+    }
+
+    // Encrypt the input file
+    int result_encrypt = encrypt_file(input_file, encrypted_file, key, iv);
+    if (result_encrypt != 0) {
+        fprintf(stderr, "Encryption failed.\n");
+        return -1;
+    }
+
+    printf("Encryption successful. Encrypted file created: %s\n", encrypted_file);
+
+    // Decrypt the encrypted file
+    int result_decrypt = decrypt_file(encrypted_file, decrypted_file, key, iv);
+    if (result_decrypt != 0) {
+        fprintf(stderr, "Decryption failed.\n");
+        return -1;
+    }
+
+    printf("Decryption successful. Decrypted file created: %s\n", decrypted_file);
+
+    return 0;
+}
+*/  
+
